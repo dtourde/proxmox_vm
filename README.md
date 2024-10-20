@@ -2,6 +2,67 @@
 
 This module suits my own needs, if you need to use it, you will have to make some modifications, particularily on the variable validation side.
 
+# Usage
+
+Usage exemple to create multiple instances.
+
+```
+# variables.tf
+variable "k3s_server" {
+  description = "K3S server instances"
+  type = map(object({
+    cores     = optional(number, 2)
+    memory    = optional(number, 2 * 1024)
+    disk_size = optional(string, "30G")
+    ip        = string
+    gw        = string
+  }))
+}
+
+
+variable "sshkeys" {
+  description = "ssh keys to add to the instance"
+  type        = string
+  default     = <<EOF
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIOIkoUOXUo+P0d3vgGL53k00xDICqmzKgCnwDHk4F9X example@dtourde
+EOF
+}
+
+# vars.tfvars
+k3s_server = {
+  0 = {
+    ip = "10.0.11.30/24"
+    gw = "10.0.11.1"
+  }
+  1 = {
+    ip = "10.0.11.31/24"
+    gw = "10.0.11.1"
+  }
+  2 = {
+    ip = "10.0.11.32/24"
+    gw = "10.0.11.1"
+  }
+}
+
+# main.tf
+module "k3s_server" {
+  for_each = var.k3s_server
+  source   = "../modules/proxmox_vm"
+
+  name = format("server-%s", each.key)
+
+  network_bridge = "vmbr11"
+  ipconfig0  = format("ip=%s,gw=%s", each.value.ip, each.value.gw)
+  nameserver = "10.0.11.1"
+
+  cores     = each.value.cores
+  memory    = each.value.memory
+  disk_size = each.value.disk_size
+
+  sshkeys = var.sshkeys
+}
+```
+
 # TODO
 
 * add option to start vm with hyperviser
