@@ -47,7 +47,8 @@ k3s_server = {
 # main.tf
 module "k3s_server" {
   for_each = var.k3s_server
-  source   = "../modules/proxmox_vm"
+  source   = "github.com/dtourde/proxmox_vm?ref=1.0.0"
+
 
   name = format("server-%s", each.key)
 
